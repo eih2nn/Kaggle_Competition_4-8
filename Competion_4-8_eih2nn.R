@@ -7,11 +7,13 @@
 #as well as tm and MASS
 library(tidyverse)
 
-sample_submission <- read_csv("sample_submission.csv") #Read in the comma separated value data file
-
 #Read in files:
+sample_submission <- read_csv("sample_submission.csv") #Read in the comma separated value data file
 train <- read_csv("train.csv") #Read in the comma separated value data file for training the model
 test <- read_csv("test.csv") #Read in the csv data file for testing the model
+
+
+##### DATA PREPARATION #####
 
 #Check to see whether categorical columns are factors or other
 class(train['ps_ind_02_cat'][[1]])
@@ -74,7 +76,7 @@ for (var in 1:ncol(test)) {
   }
 }
 
-##### PARAMETRIC APPROACH #####
+##### PARAMETRIC APPROACH - BASIC LINEAR MODEL #####
 
 train2 <- train[ , (!names(train) %in% 'id')]
 
@@ -108,3 +110,4 @@ mypreds.lm <- mypreds.lm[,c(2,1)] #Switch the columns so that ID is the first co
 write.table(mypreds.lm, file = "mypreds_lm1.csv", row.names=F, sep=",") #Write out to a csv
 
 
+##### PARAMETRIC APPROACH - SECOND ATTEMPT AT LINEAR MODEL #####
