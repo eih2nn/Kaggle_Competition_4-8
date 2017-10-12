@@ -98,7 +98,13 @@ mypreds.lm <- data.frame(predict(train2.lm2, newdata = test))  #Put these values
 
 colnames(mypreds.lm)[1] <- "target" #Assign the column the appropriate name
 
+#Make sure all target values are within desired range
+mypreds.lm$target[mypreds.lm$target<0] <- 0
+mypreds.lm$target[mypreds.lm$target>1] <- 1
+
 mypreds.lm["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
 mypreds.lm <- mypreds.lm[,c(2,1)] #Switch the columns so that ID is the first column
 
 write.table(mypreds.lm, file = "mypreds_lm1.csv", row.names=F, sep=",") #Write out to a csv
+
+
