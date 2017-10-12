@@ -7,7 +7,7 @@
 #as well as tm and MASS
 library(tidyverse)
 
-sample_sumbission <- read_csv("sample_submission.csv") #Read in the comma separated value data file
+sample_submission <- read_csv("sample_submission.csv") #Read in the comma separated value data file
 
 #Read in files:
 train <- read_csv("train.csv") #Read in the comma separated value data file for training the model
@@ -34,3 +34,71 @@ class(train['ps_ind_02_cat'][[1]])
 class(train['ps_ind_03'][[1]])
 #numeric
 
+#Put NaNs in for all observations noted as -1 (as these are sentinel values)
+train[train == -1] <- NA
+test[test == -1] <- NA
+
+#Create mode function
+Mode <- function(x, na.rm) {
+  xtab <- table(x)
+  xmode <- names(which(xtab == max(xtab)))
+  if (length(xmode) > 1) xmode <- ">1 mode"
+  return(xmode)
+}
+
+#Replace all NA values in "factor" columns with the mode of that column
+for (var in 1:ncol(train)) {  
+  if (lapply((train[,var]), class)=="factor") {
+    train[is.na(train[,var]),var] <- Mode(train[,var], na.rm = TRUE)
+  }
+}
+
+#Repeat for test set
+for (var in 1:ncol(test)) {  
+  if (lapply((test[,var]), class)=="factor") {
+    test[is.na(test[,var]),var] <- Mode(test[,var], na.rm = TRUE)
+  }
+}
+
+#Replace all NA values in "numeric" columns with the mean of that column 
+for (var in 1:ncol(train)) {
+  if (lapply((train[,var]), class)=="numeric") {
+    train[is.na(train[,var]),var] <- sapply(train[,var], mean, na.rm=TRUE)
+  }
+}
+
+#Repeat for test set
+for (var in 1:ncol(test)) {
+  if (lapply((test[,var]), class)=="numeric") {
+    test[is.na(test[,var]),var] <- sapply(test[,var], mean, na.rm=TRUE)
+  }
+}
+
+##### PARAMETRIC APPROACH #####
+
+train2 <- train[ , (!names(train) %in% 'id')]
+
+train2.lm <- lm(target~.,data=train2)
+
+#summary(train2.lm) -- used this to select out parameters with significance...
+
+train2.lm2 <- lm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
+                  ps_car_09_cat+ps_car_07_cat+ps_car_04_cat+
+                  ps_car_01_cat+ps_reg_03+ps_reg_02+
+                  ps_reg_01+ps_ind_17_bin+ps_ind_16_bin+ps_ind_15+
+                  ps_ind_08_bin+ps_ind_07_bin+ps_ind_05_cat+ps_ind_04_cat+
+                  ps_ind_03+ps_ind_02_cat+
+                  ps_ind_01, data=train2)
+
+summary(train2.lm2)
+
+#Create predictions for test set
+#Use the predict function to apply the above linear model to the test data
+mypreds.lm <- data.frame(predict(train2.lm2, newdata = test))  #Put these values into a dataframe
+
+colnames(mypreds.lm)[1] <- "target" #Assign the column the appropriate name
+
+mypreds.lm["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
+mypreds.lm <- mypreds.lm[,c(2,1)] #Switch the columns so that ID is the first column
+
+write.table(mypreds.lm, file = "mypreds_lm1.csv", row.names=F, sep=",") #Write out to a csv
