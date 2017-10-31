@@ -76,6 +76,7 @@ for (var in 1:ncol(test)) {
   }
 }
 
+
 ##### PARAMETRIC APPROACH - BASIC LINEAR MODEL #####
 
 train2 <- train[ , (!names(train) %in% 'id')]
@@ -138,6 +139,7 @@ mypreds.lm2 <- mypreds.lm2[,c(2,1)] #Switch the columns so that ID is the first 
 
 write.table(mypreds.lm2, file = "mypreds_lm2.csv", row.names=F, sep=",") #Write out to a csv
 
+
 ##### NON-PARAMETRIC APPROACH - SPLINE MODEL #####
 
 # Spline
@@ -161,3 +163,28 @@ mypreds.lm3["id"] <- sample_submission['id'] #Add the id column to the newest da
 mypreds.lm3 <- mypreds.lm3[,c(2,1)] #Switch the columns so that ID is the first column
 
 write.table(mypreds.lm3, file = "mypreds_lm3.csv", row.names=F, sep=",") #Write out to a csv
+
+
+##### NON-PARAMETRIC APPROACH - RANDOM FOREST #####
+
+# Random Forest
+oob.err=double(4)
+test.err=double(4)
+
+#mtry is no of Variables randomly chosen at each split
+for(mtry in 1:4) 
+{
+  rf=randomForest(target~ps_car_12+ps_car_13+ps_car_14+
+                    ps_reg_03+ps_reg_02+
+                    ps_reg_01+ps_ind_17_bin+ps_ind_16_bin+ps_ind_15+
+                    ps_ind_08_bin+ps_ind_07_bin+
+                    ps_ind_03+
+                    ps_ind_01, data=train2, ntree=100) 
+  oob.err[mtry] = rf$mse[50] #Error of all Trees fitted
+  
+  pred<-predict(rf,data_test) #Predictions on Test Set for each Tree
+  test.err[mtry]= with(test, mean( (target - pred)^2)) #Mean Squared Test Error
+  
+  cat(mtry," ") #printing the output to the console
+  
+}
