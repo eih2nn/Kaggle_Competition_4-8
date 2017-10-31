@@ -110,4 +110,54 @@ mypreds.lm <- mypreds.lm[,c(2,1)] #Switch the columns so that ID is the first co
 write.table(mypreds.lm, file = "mypreds_lm1.csv", row.names=F, sep=",") #Write out to a csv
 
 
-##### PARAMETRIC APPROACH - SECOND ATTEMPT AT LINEAR MODEL #####
+##### SECOND PARAMETRIC APPROACH - NON-LINEAR MODEL #####
+
+# Polynomial
+cv.error.10 =rep(0,10)
+for (i in 1:10){fitted = lm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
+                              ps_car_09_cat+ps_car_07_cat+ps_car_04_cat+
+                              ps_car_01_cat+poly(ps_reg_03,i)+ps_reg_02+
+                              ps_reg_01+ps_ind_17_bin+ps_ind_16_bin+ps_ind_15+
+                              ps_ind_08_bin+ps_ind_07_bin+ps_ind_05_cat+ps_ind_04_cat+
+                              ps_ind_03+ps_ind_02_cat+
+                              ps_ind_01, data=train2)
+cv.error.10[i] = cv.glm(train2,fitted,K=10)$delta[1]
+}
+
+cv.error.10 # i =3
+
+mypreds.lm2 <- data.frame(predict(train2.lm3, newdata = test))  #Put these values into a dataframe
+
+colnames(mypreds.lm2)[1] <- "target" #Assign the column the appropriate name
+
+#Make sure all target values are within desired range
+mypreds.lm2$target[mypreds.lm2$target<0] <- 0
+mypreds.lm2$target[mypreds.lm2$target>1] <- 1
+mypreds.lm2["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
+mypreds.lm2 <- mypreds.lm2[,c(2,1)] #Switch the columns so that ID is the first column
+
+write.table(mypreds.lm2, file = "mypreds_lm2.csv", row.names=F, sep=",") #Write out to a csv
+
+##### NON-PARAMETRIC APPROACH - SPLINE MODEL #####
+
+# Spline
+library(splines)
+train2.lm4 <- lm(target~bs(ps_car_12, knots = c(0,0.8,1.2))+ns(ps_car_13,df=3)+ns(ps_car_14, df=3)+ps_car_11_cat+
+                   ps_car_09_cat+ps_car_07_cat+ps_car_04_cat+
+                   ps_car_01_cat+poly(ps_reg_03,3)+poly(ps_reg_02,2)+
+                   ps_reg_01+ps_ind_17_bin+ps_ind_16_bin+ps_ind_15+
+                   ps_ind_08_bin+ps_ind_07_bin+ps_ind_05_cat+ps_ind_04_cat+
+                   ps_ind_03+ps_ind_02_cat+
+                   ps_ind_01, data=train2)
+summary(train2.lm4)
+mypreds.lm3 <- data.frame(predict(train2.lm4, newdata = test))  #Put these values into a dataframe
+
+colnames(mypreds.lm3)[1] <- "target" #Assign the column the appropriate name
+
+#Make sure all target values are within desired range
+mypreds.lm3$target[mypreds.lm3$target<0] <- 0
+mypreds.lm3$target[mypreds.lm3$target>1] <- 1
+mypreds.lm3["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
+mypreds.lm3 <- mypreds.lm3[,c(2,1)] #Switch the columns so that ID is the first column
+
+write.table(mypreds.lm3, file = "mypreds_lm3.csv", row.names=F, sep=",") #Write out to a csv
