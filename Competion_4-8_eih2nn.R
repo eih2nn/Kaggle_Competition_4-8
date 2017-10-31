@@ -5,13 +5,17 @@
 
 #Load the core tidyverse packages (ggplot2, tibble, tidyr, readr, purrr, and dplyr), 
 #as well as tm and MASS
+
 library(tidyverse)
+library(randomForest)
+
+setwd("~/Documents/GitHub/Kaggle_Competition_4-8")
 
 #Read in files:
 sample_submission <- read_csv("sample_submission.csv") #Read in the comma separated value data file
 train <- read_csv("train.csv") #Read in the comma separated value data file for training the model
 test <- read_csv("test.csv") #Read in the csv data file for testing the model
-
+test_new <-  read_csv("test 2.csv")
 
 ##### DATA PREPARATION #####
 
@@ -77,11 +81,11 @@ for (var in 1:ncol(test)) {
 }
 
 
-##### PARAMETRIC APPROACH - BASIC LINEAR MODEL #####
-
 train2 <- train[ , (!names(train) %in% 'id')]
 
-train2.lm <- lm(target~.,data=train2)
+##### PARAMETRIC APPROACH - BASIC LINEAR MODEL #####
+
+#train2.lm <- lm(target~.,data=train2)
 
 #summary(train2.lm) -- used this to select out parameters with significance...
 
@@ -167,24 +171,31 @@ write.table(mypreds.lm3, file = "mypreds_lm3.csv", row.names=F, sep=",") #Write 
 
 ##### NON-PARAMETRIC APPROACH - RANDOM FOREST #####
 
-# Random Forest
-oob.err=double(4)
-test.err=double(4)
+#Create weighted sample
+sum(train2$target == 1)
+nrow(train2)
+21694/595212 #0.03644752
 
-#mtry is no of Variables randomly chosen at each split
-for(mtry in 1:4) 
-{
-  rf=randomForest(target~ps_car_12+ps_car_13+ps_car_14+
-                    ps_reg_03+ps_reg_02+
-                    ps_reg_01+ps_ind_17_bin+ps_ind_16_bin+ps_ind_15+
-                    ps_ind_08_bin+ps_ind_07_bin+
-                    ps_ind_03+
-                    ps_ind_01, data=train2, ntree=100) 
-  oob.err[mtry] = rf$mse[50] #Error of all Trees fitted
-  
-  pred<-predict(rf,data_test) #Predictions on Test Set for each Tree
-  test.err[mtry]= with(test, mean( (target - pred)^2)) #Mean Squared Test Error
-  
-  cat(mtry," ") #printing the output to the console
-  
-}
+21694/.2 #108470
+108470-21694 #86776 -- number of zeros desired!
+
+train2 %>%
+  subset(train2$target == 0) -> train2_zeros
+
+train2_zeros[sample(nrow(train2_zeros), 86776), ] -> train2_sample_zeros
+
+train2 %>%
+  subset(train2$target == 1) -> train2_ones
+
+train2_sample <- rbind(train2_ones, train2_sample_zeros)
+
+write.table(train2_sample, file = "train2_sample.csv", row.names=F, sep=",") #Write out to a csv
+
+#Random Forest completed in python
+RF <- read.csv("RFrun2.csv",header=FALSE) 
+colnames(RF)=c("id","target")
+
+RF["id"] <- test_new["id"]
+
+write.table(RF, file = "mypreds_rf2.csv", row.names=F, sep=",") #Write out to a csv
+
