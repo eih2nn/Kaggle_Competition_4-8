@@ -10,14 +10,35 @@ library(tidyverse)
 library(randomForest)
 library(boot)
 library(caret)
-source("Gini.R")
 
 #setwd("/home/yingjie/Desktop/R")
+setwd("~/Documents/GitHub/Kaggle_Competition_4-8")
+
+source("Gini.R")
 
 #Read in files:
 sample_submission <- read_csv("sample_submission.csv") #Read in the comma separated value data file
 train <- read_csv("train.csv") #Read in the comma separated value data file for training the model
 test <- read_csv("test.csv") #Read in the csv data file for testing the model
+preds <- read_csv("preds10.csv")
+preds <- preds[,2]
+valid <- read_csv("validtarget.csv")
+valid <- valid[,2]
+finalpreds <- read_csv("finalpreds.csv")
+finalpreds <- finalpreds[,2]
+
+sum(finalpreds$target==1)
+626/892816
+
+### RF GINI ###
+
+#Gini index
+unnormalized.gini.index(valid$target, preds$target) #0.4001841
+normalized.gini.index(valid$target, preds$target) #0.9996654
+length(train2$target) #595212
+length(mypreds.lm$target) #595212
+
+
 
 ##### DATA PREPARATION #####
 
@@ -118,6 +139,7 @@ normalized.gini.index(train2$target, mypreds.lm$target) #0.2621323
 length(train2$target) #595212
 length(mypreds.lm$target) #595212
 
+
 #Create predictions for test set
 #Use the predict function to apply the above linear model to the test data
 mypreds.lm <- data.frame(predict(train2.lm2, newdata = test))  #Put these values into a dataframe
@@ -217,3 +239,24 @@ RF["id"] <- test_new["id"]
 
 write.table(RF, file = "mypreds_rf2.csv", row.names=F, sep=",") #Write out to a csv
 
+
+
+##### NON-PARAMETRIC APPROACH - KNN #####
+
+#First, we prepared our data sets by selecting out numeric variables only
+
+train.knn <- train2_sample[ , (!names(train2_sample) %in% factors)] #Select only columns with numeric values
+test.knn <- test[ , (!names(test) %in% factors)] #Repeat for test set
+
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 1) #Create a training control
+set.seed(22) #Set the seed to a random number 
+
+#Of note, we repeated this with different seeds several times to make sure we hadn't picked one that would produce a rare K result
+
+
+knn.fit <- train(target ~., data = train.knn, method = "knn",  #Train a model using knn, with 10 runs of different K values
+                 trControl=trctrl,
+                 preProcess = c("center", "scale"),
+                 tuneLength = 10)
+
+knn.fit #See output below...
