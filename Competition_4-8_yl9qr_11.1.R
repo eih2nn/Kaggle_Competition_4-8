@@ -12,7 +12,7 @@ library(boot)
 library(caret)
 source("Gini.R")
 
-setwd("/home/yingjie/Desktop/R")
+#setwd("/home/yingjie/Desktop/R")
 
 #Read in files:
 sample_submission <- read_csv("sample_submission.csv") #Read in the comma separated value data file
@@ -113,14 +113,10 @@ mypreds.lm$target[mypreds.lm$target<0] <- 0
 mypreds.lm$target[mypreds.lm$target>1] <- 1
 
 #Gini index
-unnormalized.gini.index(train2$target, mypreds.lm$target)
-normalized.gini.index(train2$target, mypreds.lm$target)
-length(train2$target)
-length(mypreds.lm$target) ####?????
-
-# Error message
-# Error in unnormalized.gini(ground.truth, ground.truth) : 
-#  could not find function "unnormalized.gini"
+unnormalized.gini.index(train2$target, mypreds.lm$target) #0.1262891
+normalized.gini.index(train2$target, mypreds.lm$target) #0.2621323
+length(train2$target) #595212
+length(mypreds.lm$target) #595212
 
 #Create predictions for test set
 #Use the predict function to apply the above linear model to the test data
