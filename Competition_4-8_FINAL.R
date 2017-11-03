@@ -145,6 +145,9 @@ valid_target <- valid[ , (names(valid) %in% 'target')]
 write.table(train2, file = "training_weighted.csv", row.names=F, sep=",") #Write out to a csv
 write.table(valid2, file = "validation_weighted.csv", row.names=F, sep=",") #Write out to a csv
 write.table(valid_target, file = "validation_target.csv", row.names=F, sep=",") #Write out to a csv
+write.table(testing, file = "testing.csv", row.names=F, sep=",") #Write out to a csv
+write.table(id, file = "test_id.csv", row.names=F, sep=",") #Write out to a csv
+
 
 ####################################################
 #                                                  #
@@ -297,14 +300,12 @@ write.table(mypreds.spline, file = "mypreds_spline.csv", row.names=F, sep=",") #
 
 preds <- read_csv("preds10.csv")
 preds <- preds[,2]
-valid <- read_csv("validtarget.csv")
-valid <- valid[,2]
 
 ### RF GINI ###
 
 #Gini index
-unnormalized.gini.index(valid$target, preds$target) #0.4001841
-normalized.gini.index(valid$target, preds$target) #0.9996654
+unnormalized.gini.index(valid_target$target, preds$target) #0.4001841
+normalized.gini.index(valid_target$target, preds$target) #0.9996654
 
 ####### TEST SET PREDICTIONS #######
 
