@@ -1,16 +1,12 @@
 
 # coding: utf-8
 
-# In[1]:
-
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.datasets import make_classification
 import pandas as pd
 import os #Import os package
 
-
-# In[2]:
 
 ### Read in file
 #%%
@@ -19,23 +15,12 @@ os.chdir('/home/yingjie/Desktop')
 test = pd.DataFrame.from_csv('test.csv',index_col=None)
 train = pd.DataFrame.from_csv('train.csv',index_col=None)
 
-
-# In[3]:
-
 test.head()
-
-
-# In[4]:
 
 train.head()
 
-
-# In[5]:
-
 sum(train.target==0) # Check zeros in training dataset
 
-
-# In[6]:
 
 # PRE-PROCESSING - FULL MODEL
 # Remove id from both training and testing dataset
@@ -46,10 +31,6 @@ Y = train_noid[["target"]] #training set target
 x = train_noid.loc[:,train_noid.columns !="target"] #training set predictors
 x2 = test_noid.loc[: , test_noid.columns !='target'] # testing set predictors
 
-#%%
-
-
-# In[7]:
 
 # PRE-PROCESSING - SUBSET MODEL
 # Training set and validation set - set up
@@ -64,10 +45,6 @@ train_RF_T = train_RF[["target"]]
 valid_RF_noT = valid_RF.loc[:,valid_RF.columns !="target"] # validation set predictors
 valid_RF_T = valid_RF[["target"]]
 
-#%%
-
-
-# In[ ]:
 
 ''' Did not use this part of the code
 # Define unnormalized gini index and normalized gini index
@@ -92,14 +69,9 @@ def normalized_gini_index(ground_truth, predicted_probabilities):
 #%%
 '''
 
-
-# In[8]:
-
 len(train_RF) #476170
 len(valid_RF) #119042
 
-
-# In[ ]:
 
 # Random Forest - Takes a very long time to run
 #%%
@@ -109,18 +81,13 @@ preds = (clf.predict(valid_RF_noT)) # Predict using validation set
 preds
 #%%
 
-
-# In[ ]:
-
 predsfinal = pd.DataFrame(preds)
 predsfinal.columns = ["target"]
 predsfinal.head()
 sum(predsfinal.target==0) # Check how many predicted values are zeros
 len(predsfinal)
 
-
-# In[ ]:
-
+# Write out files
 predsfinal.to_csv("finalpreds.csv") # Write out predicted file to be used in gini index function in R
 valid_RF_T.to_csv("validtarget.csv") # Write out target values in validation set to be used in gini index function in R
 
