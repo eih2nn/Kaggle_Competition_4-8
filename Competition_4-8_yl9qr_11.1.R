@@ -248,6 +248,7 @@ mypreds.lm2 <- mypreds.lm2[,c(2,1)] #Switch the columns so that ID is the first 
 
 write.table(mypreds.lm2, file = "mypreds_lm2.csv", row.names=F, sep=",") #Write out to a csv
 
+#KAGGLE SCORE: UNCHANGED FROM LINEAR (still 0.251)
 
 ####################################################
 #                                                  #
