@@ -197,7 +197,7 @@ mypreds.lm$target[mypreds.lm$target>1] <- 1
 mypreds.lm["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
 mypreds.lm <- mypreds.lm[,c(2,1)] #Switch the columns so that ID is the first column
 
-write.table(mypreds.lm, file = "mypreds_lm1.csv", row.names=F, sep=",") #Write out to a csv
+write.table(mypreds.lm, file = "mypreds_lm.csv", row.names=F, sep=",") #Write out to a csv
 
 #HIGHEST LINEAR MODEL KAGGLE SCORE = 0.251
 
@@ -236,17 +236,17 @@ train2.lm3 = lm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
 
 ####### TEST SET PREDICTIONS #######
 
-mypreds.lm2 <- data.frame(predict(train2.lm3, newdata = test))  #Put these values into a dataframe
+mypreds.poly <- data.frame(predict(train2.lm3, newdata = test))  #Put these values into a dataframe
 
-colnames(mypreds.lm2)[1] <- "target" #Assign the column the appropriate name
+colnames(mypreds.poly)[1] <- "target" #Assign the column the appropriate name
 
 #Make sure all target values are within desired range
-mypreds.lm2$target[mypreds.lm2$target<0] <- 0
-mypreds.lm2$target[mypreds.lm2$target>1] <- 1
-mypreds.lm2["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
-mypreds.lm2 <- mypreds.lm2[,c(2,1)] #Switch the columns so that ID is the first column
+mypreds.poly$target[mypreds.poly$target<0] <- 0
+mypreds.poly$target[mypreds.poly$target>1] <- 1
+mypreds.poly["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
+mypreds.poly <- mypreds.poly[,c(2,1)] #Switch the columns so that ID is the first column
 
-write.table(mypreds.lm2, file = "mypreds_lm2.csv", row.names=F, sep=",") #Write out to a csv
+write.table(mypreds.poly, file = "mypreds_poly.csv", row.names=F, sep=",") #Write out to a csv
 
 #KAGGLE SCORE: UNCHANGED FROM LINEAR (still 0.251)
 
@@ -269,18 +269,19 @@ summary(train2.lm4)
 
 ####### TEST SET PREDICTIONS #######
 
-mypreds.lm3 <- data.frame(predict(train2.lm4, newdata = test))  #Put these values into a dataframe
+mypreds.spline <- data.frame(predict(train2.lm4, newdata = test))  #Put these values into a dataframe
 
-colnames(mypreds.lm3)[1] <- "target" #Assign the column the appropriate name
+colnames(mypreds.spline)[1] <- "target" #Assign the column the appropriate name
 
 #Make sure all target values are within desired range
-mypreds.lm3$target[mypreds.lm3$target<0] <- 0
-mypreds.lm3$target[mypreds.lm3$target>1] <- 1
-mypreds.lm3["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
-mypreds.lm3 <- mypreds.lm3[,c(2,1)] #Switch the columns so that ID is the first column
+mypreds.spline$target[mypreds.spline$target<0] <- 0
+mypreds.spline$target[mypreds.spline$target>1] <- 1
+mypreds.spline["id"] <- sample_submission['id'] #Add the id column to the newest dataframe
+mypreds.spline <- mypreds.spline[,c(2,1)] #Switch the columns so that ID is the first column
 
-write.table(mypreds.lm3, file = "mypreds_lm3.csv", row.names=F, sep=",") #Write out to a csv
+write.table(mypreds.spline, file = "mypreds_spline.csv", row.names=F, sep=",") #Write out to a csv
 
+#SPLINE MODEL KAGGLE SCORE: 0.235
 
 ####################################################
 #                                                  #
