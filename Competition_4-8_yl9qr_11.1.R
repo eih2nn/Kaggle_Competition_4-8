@@ -20,27 +20,14 @@ source("Gini.R")
 sample_submission <- read_csv("sample_submission.csv") #Read in the comma separated value data file
 train <- read_csv("train.csv") #Read in the comma separated value data file for training the model
 test <- read_csv("test.csv") #Read in the csv data file for testing the model
-preds <- read_csv("preds10.csv")
-preds <- preds[,2]
-valid <- read_csv("validtarget.csv")
-valid <- valid[,2]
-finalpreds <- read_csv("finalpreds.csv")
-finalpreds <- finalpreds[,2]
-
-sum(finalpreds$target==1)
-626/892816
-
-### RF GINI ###
-
-#Gini index
-unnormalized.gini.index(valid$target, preds$target) #0.4001841
-normalized.gini.index(valid$target, preds$target) #0.9996654
-length(train2$target) #595212
-length(mypreds.lm$target) #595212
 
 
+####################################################
+#                                                  #
+#      DATA INVESTIGATION AND PREPROCESSING        #
+#                                                  #
+####################################################
 
-##### DATA PREPARATION #####
 
 #Check to see whether categorical columns are factors or other
 class(train['ps_ind_02_cat'][[1]])
@@ -103,14 +90,71 @@ for (var in 1:ncol(test)) {
   }
 }
 
+#Set aside ID column and place remaining in testing set
+id <- test[, (names(test) %in% 'id')]
+testing <- test[, (!names(test) %in% 'id')]
 
-train2 <- train[ , (!names(train) %in% 'id')]
+##### DOWNSAMPLING TO RE-WEIGHT THE DATA #####
 
-##### PARAMETRIC APPROACH - BASIC LINEAR MODEL #####
+#Determine the prevalence of 1s in the full training dataset
+sum(train$target == 1) #21694
+
+#Determine length of dataset
+nrow(train) #595212
+
+#Determine current percentage of target==1 in dataset
+21694/595212 #0.03644752
+
+#Figure out how many 0 rows are needed to make all of the 1 rows equal to 20% of the training data
+21694/.2 #108470
+108470-21694 #86776 -- number of zeros desired!
+
+#Subset the training data as necessary given above information
+train %>%
+  subset(train$target == 0) -> train_zeros
+
+set.seed(5)
+
+train_zeros[sample(nrow(train_zeros), 86776), ] -> train_sample_zeros
+
+train %>%
+  subset(train2$target == 1) -> train_ones
+
+#This is the new training sample...
+train_sample <- rbind(train_ones, train_sample_zeros)
+
+#Write this out for use in python later...
+write.table(train_sample, file = "train2_sample.csv", row.names=F, sep=",") #Write out to a csv
+
+##### CREATE VALIDATION SET #####
+
+#Take 20% of weighted sample to use for validation
+nrow(train_sample) #108470
+0.2*108470 #21694
+
+set.seed(5)
+
+validation <- train_sample[sample(nrow(train_sample), 21694), ]
+training <- train_sample[!(train_sample$id %in% validation$id),]
+
+#Remove ID column
+train2 <- training[ , (!names(training) %in% 'id')]
+valid <- validation[ , (!names(validation) %in% 'id')]
+valid2 <- valid[ , (!names(valid) %in% 'target')]
+valid_target <- valid[ , (names(valid) %in% 'target')]
+
+
+####################################################
+#                                                  #
+#    PARAMETRIC APPROACH - BASIC LINEAR MODEL      #
+#                                                  #
+####################################################
 
 #train2.lm <- lm(target~.,data=train2)
 
-#summary(train2.lm) -- used this to select out parameters with significance...
+#summary(train2.lm) # Used this to select out parameters with significance...
+
+#COMPLETED PARAMETER SELECTION MANUALLY (FORWARD AND BACKWARD STEP-WISE)
 
 train2.lm2 <- lm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
                    ps_car_09_cat+ps_car_07_cat+ps_car_04_cat+
@@ -122,10 +166,11 @@ train2.lm2 <- lm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
 
 summary(train2.lm2)
 
-# Gini Index
-#Use train2.lm2 to create predictions for train set
-#Use the predict function to apply the above linear model to the train data
-mypreds.lm <- data.frame(predict(train2.lm2, newdata = train2))  #Put these values into a dataframe
+####### GINI INDEX #######
+
+#Use train2.lm2 to create predictions for validation set
+#Use the predict function to apply the above linear model to the validation data
+mypreds.lm <- data.frame(predict(train2.lm2, newdata = valid2))  #Put these values into a dataframe
 
 colnames(mypreds.lm)[1] <- "target" #Assign the column the appropriate name
 
@@ -134,11 +179,10 @@ mypreds.lm$target[mypreds.lm$target<0] <- 0
 mypreds.lm$target[mypreds.lm$target>1] <- 1
 
 #Gini index
-unnormalized.gini.index(train2$target, mypreds.lm$target) #0.1262891
-normalized.gini.index(train2$target, mypreds.lm$target) #0.2621323
-length(train2$target) #595212
-length(mypreds.lm$target) #595212
+unnormalized.gini.index(valid_target$target, mypreds.lm$target) #0.09508242
+normalized.gini.index(valid_target$target, mypreds.lm$target) #0.2372031
 
+####### TEST SET PREDICTIONS #######
 
 #Create predictions for test set
 #Use the predict function to apply the above linear model to the test data
@@ -155,10 +199,21 @@ mypreds.lm <- mypreds.lm[,c(2,1)] #Switch the columns so that ID is the first co
 
 write.table(mypreds.lm, file = "mypreds_lm1.csv", row.names=F, sep=",") #Write out to a csv
 
-##### SECOND PARAMETRIC APPROACH - NON-LINEAR MODEL #####
+#HIGHEST LINEAR MODEL KAGGLE SCORE = 0.251
 
-# Polynomial
-cv.error.10 =rep(0,10)
+
+####################################################
+#                                                  #
+#   2ND PARAMETRIC APPROACH - NON-LINEAR MODEL     #
+#                                                  #
+####################################################
+
+# Polynomial -- using predictors from previously established linear model
+
+#Use K-fold cross validation with K=10
+
+cv.error.10 = rep(0,10)
+
 for (i in 1:10){fitted = lm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
                               ps_car_09_cat+ps_car_07_cat+ps_car_04_cat+
                               ps_car_01_cat+poly(ps_reg_03,i)+ps_reg_02+
@@ -169,7 +224,17 @@ for (i in 1:10){fitted = lm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
 cv.error.10[i] = cv.glm(train2,fitted,K=10)$delta[1]
 }
 
-cv.error.10 # i =3
+cv.error.10 #i=3 
+
+train2.lm3 <- lm(target ~ poly((ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
+                                   ps_car_09_cat+ps_car_07_cat+ps_car_04_cat+
+                                   ps_car_01_cat+poly(ps_reg_03,i)+ps_reg_02+
+                                   ps_reg_01+ps_ind_17_bin+ps_ind_16_bin+ps_ind_15+
+                                   ps_ind_08_bin+ps_ind_07_bin+ps_ind_05_cat+ps_ind_04_cat+
+                                   ps_ind_03+ps_ind_02_cat+
+                                   ps_ind_01),3), data=train2)
+
+####### TEST SET PREDICTIONS #######
 
 mypreds.lm2 <- data.frame(predict(train2.lm3, newdata = test))  #Put these values into a dataframe
 
@@ -184,7 +249,11 @@ mypreds.lm2 <- mypreds.lm2[,c(2,1)] #Switch the columns so that ID is the first 
 write.table(mypreds.lm2, file = "mypreds_lm2.csv", row.names=F, sep=",") #Write out to a csv
 
 
-##### NON-PARAMETRIC APPROACH - SPLINE MODEL #####
+####################################################
+#                                                  #
+#     NON-PARAMETRIC APPROACH - SPLINE MODEL       #
+#                                                  #
+####################################################
 
 # Spline
 library(splines)
@@ -196,6 +265,9 @@ train2.lm4 <- lm(target~bs(ps_car_12, knots = c(0,0.8,1.2))+ns(ps_car_13,df=3)+n
                    ps_ind_03+ps_ind_02_cat+
                    ps_ind_01, data=train2)
 summary(train2.lm4)
+
+####### TEST SET PREDICTIONS #######
+
 mypreds.lm3 <- data.frame(predict(train2.lm4, newdata = test))  #Put these values into a dataframe
 
 colnames(mypreds.lm3)[1] <- "target" #Assign the column the appropriate name
@@ -209,54 +281,34 @@ mypreds.lm3 <- mypreds.lm3[,c(2,1)] #Switch the columns so that ID is the first 
 write.table(mypreds.lm3, file = "mypreds_lm3.csv", row.names=F, sep=",") #Write out to a csv
 
 
-##### NON-PARAMETRIC APPROACH - RANDOM FOREST #####
+####################################################
+#                                                  #
+#  NON-PARAMETRIC APPROACH - RANDOM FOREST MODEL   #
+#                                                  #
+####################################################
 
-#Create weighted sample
-sum(train2$target == 1)
-nrow(train2)
-21694/595212 #0.03644752
+#Exported weighted sample and validation sets to python...
+#Complete random forest work in python...
+#Read results back into R...
 
-21694/.2 #108470
-108470-21694 #86776 -- number of zeros desired!
+preds <- read_csv("preds10.csv")
+preds <- preds[,2]
+valid <- read_csv("validtarget.csv")
+valid <- valid[,2]
 
-train2 %>%
-  subset(train2$target == 0) -> train2_zeros
+### RF GINI ###
 
-train2_zeros[sample(nrow(train2_zeros), 86776), ] -> train2_sample_zeros
+#Gini index
+unnormalized.gini.index(valid$target, preds$target) #0.4001841
+normalized.gini.index(valid$target, preds$target) #0.9996654
 
-train2 %>%
-  subset(train2$target == 1) -> train2_ones
+####### TEST SET PREDICTIONS #######
 
-train2_sample <- rbind(train2_ones, train2_sample_zeros)
+finalpreds <- read_csv("finalpreds.csv")
+finalpreds <- finalpreds[,2]
+finalpreds["id"] <- test["id"]
+RFfinal <- finalpreds[,c("id","target")]
+write.table(RFfinal, file = "RFfinal.csv", row.names=F, sep=",") 
 
-write.table(train2_sample, file = "train2_sample.csv", row.names=F, sep=",") #Write out to a csv
+#HIGHEST RANDOM FOREST KAGGLE SCORE: 0.012
 
-#Random Forest completed in python
-RF <- read.csv("RFrun2.csv",header=FALSE) 
-colnames(RF)=c("id","target")
-
-RF["id"] <- test_new["id"]
-
-write.table(RF, file = "mypreds_rf2.csv", row.names=F, sep=",") #Write out to a csv
-
-
-
-##### NON-PARAMETRIC APPROACH - KNN #####
-
-#First, we prepared our data sets by selecting out numeric variables only
-
-train.knn <- train2_sample[ , (!names(train2_sample) %in% factors)] #Select only columns with numeric values
-test.knn <- test[ , (!names(test) %in% factors)] #Repeat for test set
-
-trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 1) #Create a training control
-set.seed(22) #Set the seed to a random number 
-
-#Of note, we repeated this with different seeds several times to make sure we hadn't picked one that would produce a rare K result
-
-
-knn.fit <- train(target ~., data = train.knn, method = "knn",  #Train a model using knn, with 10 runs of different K values
-                 trControl=trctrl,
-                 preProcess = c("center", "scale"),
-                 tuneLength = 10)
-
-knn.fit #See output below...
