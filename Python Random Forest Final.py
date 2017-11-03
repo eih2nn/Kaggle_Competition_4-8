@@ -16,7 +16,7 @@ import os #Import os package
 #%%
 os.chdir('/home/yingjie/Desktop')
 
-test_ID = pd.DataFrame.from_csv('test_ID.csv',index_col=None)
+test_ID = pd.DataFrame.from_csv('test_id.csv',index_col=None)
 test = pd.DataFrame.from_csv('testing.csv',index_col=None)
 train = pd.DataFrame.from_csv('training_weighted.csv',index_col=None)
 valid = pd.DataFrame.from_csv('validation_weighted.csv',index_col=None)
@@ -77,7 +77,7 @@ len(valid) #21694
 
 # PRE-PROCESSING - SUBSET MODEL
 # Training set preparation
-train_RF_noT = train.loc[:,train_RF.columns !="target"] # training set predictors
+train_RF_noT = train.loc[:,train.columns !="target"] # training set predictors
 train_RF_T = train[["target"]]
 
 # Validation set preparation (for consistency)
