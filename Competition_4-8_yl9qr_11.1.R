@@ -226,13 +226,13 @@ cv.error.10[i] = cv.glm(train2,fitted,K=10)$delta[1]
 
 cv.error.10 #i=3 
 
-train2.lm3 <- lm(target ~ poly((ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
-                                   ps_car_09_cat+ps_car_07_cat+ps_car_04_cat+
-                                   ps_car_01_cat+poly(ps_reg_03,i)+ps_reg_02+
-                                   ps_reg_01+ps_ind_17_bin+ps_ind_16_bin+ps_ind_15+
-                                   ps_ind_08_bin+ps_ind_07_bin+ps_ind_05_cat+ps_ind_04_cat+
-                                   ps_ind_03+ps_ind_02_cat+
-                                   ps_ind_01),3), data=train2)
+train2.lm3 = lm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
+                  ps_car_09_cat+ps_car_07_cat+ps_car_04_cat+
+                  ps_car_01_cat+poly(ps_reg_03,3)+ps_reg_02+
+                  ps_reg_01+ps_ind_17_bin+ps_ind_16_bin+ps_ind_15+
+                  ps_ind_08_bin+ps_ind_07_bin+ps_ind_05_cat+ps_ind_04_cat+
+                  ps_ind_03+ps_ind_02_cat+
+                  ps_ind_01, data=train2)
 
 ####### TEST SET PREDICTIONS #######
 
