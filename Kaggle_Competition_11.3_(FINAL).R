@@ -170,7 +170,8 @@ train2.lm2 <- glm(target~ps_car_12+ps_car_13+ps_car_14+ps_car_11_cat+
 
 summary(train2.lm2)
 
-#K-FOLD CROSS VALIDATION
+####### K-FOLD CROSS VALIDATION ####### 
+
 #https://www.r-bloggers.com/predicting-creditability-using-logistic-regression-in-r-cross-validating-the-classifier-part-2-2/
 #Cost function for a binary classifier suggested by boot package
 #(otherwise MSE is the default)
@@ -281,6 +282,8 @@ write.table(RFfinal, file = "RFfinal.csv", row.names=F, sep=",")
 ####################################################
 
 # Polynomial -- using predictors from previously established linear model
+
+####### K-FOLD CROSS VALIDATION ####### 
 
 #Use K-fold cross validation with K=10
 
